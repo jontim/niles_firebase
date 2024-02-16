@@ -1,0 +1,322 @@
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    color: #023A7E;
+    background-color: white;
+    overflow-y: none; 
+    width:70%;
+}
+
+
+header {
+    text-align: left;
+    padding: 20px;
+    
+}
+
+#company-logo {
+    width: 400px;
+    height: auto;
+    left: 10px;
+    top: 5px;
+
+}
+
+#hero-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2px;
+}
+
+#hero-image {
+    width: 50%;
+    height: auto;
+    display: block;
+    position: relative;
+   
+}
+
+#query-input, #ask-button, #loginButton {
+    width: 60%;
+    padding: 10px;
+    margin: 5px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+
+}
+
+#loginButton {
+    background-color: #0167B1;
+    color: white;
+}
+
+#ask-button {
+    background-color: #0096DE;
+    color: white;
+    width: 100px;  /* adjust as needed */
+    height: 50px
+}
+
+#privateContent p {
+    font-size: 14px;
+}
+
+#response-box { 
+    line-height: 1.5;            
+    font-family: 'Open Sans', sans- serif;
+    color: #0a7db7;                 
+    
+}
+
+#response-box h1, 
+#response-box h2, 
+#response-box h3 {
+    margin-bottom: 10px;        
+}
+
+#response-box p {
+    margin-bottom: 15px;       
+}
+#response-box {
+    margin-top: 20px;
+    height: 480px;
+    max-height: 500px;
+    width: 80%;
+    font-size: 14px !important;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #f5f5f5;
+    text-align: left;
+}
+
+@keyframes flash {
+    0% {opacity: 1;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
+}
+@keyframes flashing {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+#processing {
+    color: orange;
+    font-style: italic;
+    animation: flashing 1s infinite;
+}
+
+#processing {
+    font-size: 20px;
+    color: #E96817;
+    text-align: center;
+    font-style: italic;
+    animation: flash 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    #query-input, #ask-button, #loginButton {
+        width: 80%;
+    }
+}
+
+.separator {
+    height: 2px;
+    background-color: #ccc;
+    margin: 10px 0;
+}
+
+.buttons p {
+
+    font-size: 40px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    height: 20vh;
+    /* justify-content:normal; */
+    padding: 10px;
+    margin-bottom: 5px;
+}
+
+.circle-button {
+    /* existing styles */
+    box-shadow: -8px 5px 5px rgb(195, 195, 195); /* shadow offset, color */
+    transition: 0.3s; /* transition effect */
+   
+}
+.circle-button.active {
+    /* existing styles */
+    box-shadow: -4px 4px rgb(197, 197, 197) ; /* shadow offset, color */
+    transition: 0.3s; /* transition effect */
+   
+}
+
+#coachingButton {
+    border: 5px solid #0096DE;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #0096DE;
+    padding: 20px;
+    width: 210px; /* Adjust as needed */
+    height: 180px;
+    font-size: 26px;
+    cursor: pointer;
+    transition: transform 2s, background-color 2s, color 2s;
+    border-right-color: transparent; /* Making the outline 75% closed */
+}
+
+/* When active, complete the circle and change fill and text color */
+#coachingButton.active {
+    background-color: #0096DE;
+    color: white;
+    transform: rotate(360deg);
+}
+
+.coachingButton.reverse {
+    background-color: transparent;
+    color: #0096DE;
+    transform: rotate(-360deg);
+}
+
+#questionButton {
+    border: 5px solid #0167B1;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #0167B1;
+    padding: 20px;
+    width: 210px; /* Adjust as needed */
+    height: 180px;
+    font-size: 26px;
+    cursor: pointer;
+    transition: transform 2s, background-color 2s, color 2s;
+    border-right-color: transparent; /* Making the outline 75% closed */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 37px;
+}
+
+/* When active, complete the circle and change fill and text color */
+#questionButton.active {
+    background-color: #0167B1;
+    color: white;
+    transform: rotate(360deg);
+}
+
+#questionButton.reverse {
+    background-color: transparent;
+    color: #0167B1;
+    transform: rotate(-360deg);
+}
+
+#practiceButton {
+    border: 5px solid #003E7E;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #003E7E;
+    padding: 20px;
+    width: 210px; /* Adjust as needed */
+    height: 180px; 
+    font-size: 26px;
+    cursor: pointer;
+    transition: transform 2s, background-color 2s, color 2s;
+    border-right-color: transparent; /* Making the outline 75% closed */
+}
+
+/* When active, complete the circle and change fill and text color */
+#practiceButton.active {
+    background-color: #003E7E;
+    color: white;
+    transform: rotate(360deg);
+}
+
+.practiceButton.reverse {
+    background-color: transparent;
+    color: #003E7E;
+    transform: rotate(-360deg);
+}
+.cards-container {
+    width: 60%;
+    left: 15%%;
+    perspective: 900px;
+    backface-visibility: hidden;
+}
+
+.card {
+    width: 80%;
+    height: 100%;
+    position: absolute;
+    transform-style: preserve-3d;
+    transition: transform 1s;
+    z-index: 2;
+    
+}
+
+.card__side {
+    position: absolute;
+    width: 80%;
+    height: 100%;
+    backface-visibility: hidden;
+    transform: rotateY(180deg);
+}
+
+
+.card__side--front {
+    transform: rotateY(180deg);
+}
+
+.card__side--back {
+    background-color:#003E7E;
+    transform: rotateY(180deg);
+}
+
+.card.flipped {
+    transform: rotateY(180deg);
+    backface-visibility: hidden;
+    width: 80%;
+    z-index: 1;
+}
+
+#logo-blanco {
+    width: 90%;
+    transform: rotate(-45deg);
+    position:relative;
+    top: 40%;
+}
+
+
+.loader {
+    border: 5px solid #f3f3f3; /* Light grey background */
+    border-top: 5px solid #3498db; /* Blue color */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @keyframes flash {
+    0% {opacity: 0.75;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
+}
+
+#typingMessage {
+    animation: flash 4s linear infinite;
+    color: #FF4500; /* This is the color code for orange. Replace it with the code for the color you want. */
+}

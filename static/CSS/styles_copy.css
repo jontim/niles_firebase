@@ -1,0 +1,139 @@
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  .header {
+    background-color: #E7F7FA;
+    padding: 20px;
+    text-align: center;
+  }
+
+  header {
+    text-align: left;
+    padding: 20px;
+    
+}
+
+#company-logo {
+    width: 400px;
+    height: auto;
+    left: 10px;
+    top: 5px;
+
+}
+
+#query-input, #ask-button, #loginButton {
+    width: 60%;
+    padding: 10px;
+    margin: 5px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+
+}
+
+#loginButton {
+    background-color: #0167B1;
+    color: white;
+}
+
+#ask-button {
+    background-color: #0096DE;
+    color: white;
+    width: 100px;  /* adjust as needed */
+    height: 50px
+}
+
+  #hero-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 2px;
+}
+#questionButton {
+    background-color: #0167B1;
+    border: none;
+    color: white;
+    padding: 20px 20px; /* adjust as needed */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 25px; /* adjust as needed */
+    font-weight: bold; /* make the text bold */
+}
+.bold-large {
+    font-weight: bold;
+    font-size: 1.5em; /* adjust as needed */
+}
+.small-text {
+    font-size: 0.8em; /* adjust as needed */
+    font-weight: normal;
+}
+#questionButton::before {
+    content: url('questions.svg'); /* replace with the path to your icon */
+    color: yellow; /* make the icon yellow */
+    margin-right: 10px; /* add some space between the icon and the text */
+}
+  .query-input {
+    margin: 20px 0;
+  }
+  #ask-button {
+    padding: 10px;
+    margin-left: 10px;
+  }
+  .response-box {
+    background-color: #e6e6e6;
+    padding: 20px;
+    margin-top: 10px;
+  }
+  #response-box { 
+    line-height: 1.5;            
+    font-family: 'Open Sans', sans- serif;
+    color: #0a7db7;                 
+    
+}
+
+@keyframes flash {
+    0% {opacity: 1;}
+    50% {opacity: 0;}
+    100% {opacity: 1;}
+}
+@keyframes flashing {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+#processing {
+    color: orange;
+    font-style: italic;
+    animation: flashing 1s infinite;
+}
+
+#processing {
+    font-size: 20px;
+    color: #E96817;
+    text-align: center;
+    font-style: italic;
+    animation: flash 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    #query-input, #ask-button, #loginButton {
+        width: 80%;
+    }
+}
+
+.separator {
+    height: 2px;
+    background-color: #ccc;
+    margin: 10px 0;
+}
+
+/* .buttons p {
+
+    font-size: 40px;
+}
+

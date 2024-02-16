@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to NILES</title>
+    <link rel="stylesheet" href="static/CSS/styles_copy.css">
+    <link rel="icon" href="static/favicon-48x48.png" type="image/png">
+    <audio id="buttonSound" src="/static/mouse-click.wav" preload="auto"></audio>
+
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div id="loginStatus"> </div>
+ <div id="publicContent">
+    <header>
+      <img src="/static/NLI LOGO inline RGB.png" alt="Company Logo" id="company-logo">
+    </header>
+      <button id="loginButton">Log In</button>
+</div> 
+    <br><br>
+    <div id="privateContent" style="display: none;">
+      <header>
+      
+      </header>
+         
+      <title>NILES: Your Trusted Leadership Advisor</title>
+      
+      </head>
+      <body>
+      
+      
+        <div id="hero-container">
+          <img src="/static/NILES_Logo_Inline.png" alt="NILES" id="hero-image">
+      </div>
+      <div class="header">  
+      <h2>NILES: Your Trusted Leadership Advisor</h2>
+        <p>Select an option using the blue buttons below, then write your prompt into the text field below.</p>
+      </div>
+      
+        <div>
+        <!-- Coaching button placeholder -->
+        </div>
+        <div>
+            <button class="circle-button" id="questionButton" data-value="2" title="questionButton">
+              <span class="bold-large">Ask a question.</span>
+              <br>
+              <span class="small-text">Get science-backed answers to your leadership questions.</span>
+          </button>
+        </div>
+          <!-- Practice button placeholder -->
+       </div>
+        <!-- Practice button placeholder -->
+       </div>
+      
+      <div class="query-input">
+        <input type="text" id="query" placeholder="Enter your prompt here.">
+        <button id="ask-button">Ask</button>
+      </div>
+      
+      <div class="response-box">
+        <!-- Responses will appear here -->
+      </div>
+      
+    </div>
+      
+     
+      
+<script src="/static/js/frontend.js"></script>
+
+</body>   
+</html>
