@@ -144,6 +144,9 @@ async function submitQuery(message) {
             let htmlContent = matchResult[2]
                 // Normalize newline characters
                 .replace(/\\n/g, '\n')
+                 // Remove escape characters before quotes
+                .replace(/\\'/g, "'")
+                .replace(/\\"/g, '"')
                 // Dynamically replace markdown-like headings with HTML heading tags
                 .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
                     const level = hashes.length;
