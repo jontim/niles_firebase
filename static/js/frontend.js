@@ -143,10 +143,14 @@ async function submitQuery(message) {
         if (matchResult && matchResult[2]) {
             let htmlContent = matchResult[2]
                 // Normalize newline characters
-                .replace(/\\n/g, '\n')
-                 // Remove escape characters before quotes
-                .replace(/\\'/g, "'")
-                .replace(/\\"/g, '"')
+                .replace(/\\n/g, '\n');
+
+            // Only remove escape characters before quotes if they exist in the response
+            if (htmlContent.includes("\\'") || htmlContent.includes('\\"')) {
+                htmlContent = htmlContent.replace(/\\'/g, "'").replace(/\\"/g, '"');
+            }
+
+            htmlContent = htmlContent
                 // Dynamically replace markdown-like headings with HTML heading tags
                 .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
                     const level = hashes.length;
@@ -165,7 +169,10 @@ async function submitQuery(message) {
             const hr = document.createElement('hr');
             responseBox.insertBefore(hr, responseBox.firstChild);
         } else {
-            console.error('Pattern not found in server response:', data.response);
+            // Handle case where pattern is not found in server response
+            const newElement = document.createElement('div');
+            newElement.innerHTML = `<strong>NILES:</strong> ${data.response}`;
+            responseBox.insertBefore(newElement, responseBox.firstChild);
         }        
     } catch (error) {
         console.error('Error submitting query:', error);
