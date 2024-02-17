@@ -139,7 +139,7 @@ async function submitQuery(message) {
         const data = await response.json();
         console.log('Server response:', data.response);
 
-        const matchResult = data.response.match(/Text\(annotations=\[\], value=('|"|)([\s\S]*?)\1\)/);
+        const matchResult = data.response.match(/Text\(annotations=\[(.*?)\], value=('|"|)([\s\S]*?)\1\)/);
         if (matchResult && matchResult[2]) {
             let htmlContent = matchResult[2]
                 // Normalize newline characters
