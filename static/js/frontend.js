@@ -120,7 +120,6 @@ async function handleQuerySubmission() {
 async function submitQuery(message) {
     console.log('Submitting query:', message);
     const responseBox = document.getElementById('response-box');
-
     const requestData = { prompt: message };
 
     try {
@@ -137,43 +136,33 @@ async function submitQuery(message) {
         }
 
         const data = await response.json();
-        console.log('Server response:', data.response);
+        console.log('Server response:', data);
 
-        const matchResult = data.response.match(/Text\(annotations=\[(.*?)\], value=('|"|)([\s\S]*?)\1\)/);
+        // Extracting text, considering potential for different quotation marks in the pattern
+        const regexPattern = /Text\(annotations=\[\], value=('|")([\s\S]*?)\1\)/;
+        const matchResult = data.response.match(regexPattern);
+        let htmlContent = "";
+
         if (matchResult && matchResult[2]) {
-            let htmlContent = matchResult[2]
-                // Normalize newline characters
-                .replace(/\\n/g, '\n');
+            // Unescape newline and quotation characters
+            htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
 
-            // Only remove escape characters before quotes if they exist in the response
-            if (htmlContent.includes("\\'") || htmlContent.includes('\\"')) {
-                htmlContent = htmlContent.replace(/\\'/g, "'").replace(/\\"/g, '"');
-            }
-
+            // Dynamically convert markdown-like headings and preserve new lines
             htmlContent = htmlContent
-                // Dynamically replace markdown-like headings with HTML heading tags
                 .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
-                    const level = hashes.length;
-                    return `<h${level}>${text}</h${level}><br>`;
+                    const level = hashes.length; // Determine heading level based on number of #
+                    return `<h${level}>${text}</h${level}>`; // Convert to <h1>, <h2>, etc.
                 })
-                // Replace newline characters with <br> for HTML display
-                .replace(/\n/g, '<br>');
-
-            // Create a new div element to hold the processed content
-            const newElement = document.createElement('div');
-            newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
-            // Insert the new element into the response box at the beginning
-            responseBox.insertBefore(newElement, responseBox.firstChild);
-
-            // Optionally, add a horizontal rule for visual separation
-            const hr = document.createElement('hr');
-            responseBox.insertBefore(hr, responseBox.firstChild);
+                .replace(/\n/g, '<br>'); // Replace newline characters with <br> for HTML display
         } else {
-            // Handle case where pattern is not found in server response
-            const newElement = document.createElement('div');
-            newElement.innerHTML = `<strong>NILES:</strong> ${data.response}`;
-            responseBox.insertBefore(newElement, responseBox.firstChild);
-        }        
+            htmlContent = "No valid content found or response format is unexpected.";
+        }
+
+        // Create a new div element to hold the processed content
+        const newElement = document.createElement('div');
+        newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
+        responseBox.insertBefore(newElement, responseBox.firstChild);
+
     } catch (error) {
         console.error('Error submitting query:', error);
         document.getElementById('response-box').textContent = 'Error: ' + error.message;
