@@ -3,12 +3,17 @@ import openai
 import time
 import logging
 import markdown2
+from flask import Flask
+from dotenv import load_dotenv
+
+load_dotenv()
+import os
+
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'caa7e1ee5b96ec9d39e2a7e5062687ba1153319375edf62f30bc1eca5f0b3cd43a42be49ad3a3d692946c0f627264e51e33cb2ce699a9f7f1c4f038f572c712e'
-
-openai.api_key = "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"
-assistant_id = "asst_1hFKjYV5WjzaoVPIsCwfuPMK"
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+openai.api_key = os.getenv('OPENAI.API_KEY')
+assistant_id = os.getenv('ASSISTANT_ID')
 
 logging.basicConfig(filename='app.log', level=logging.DEBUG,
                     format='%(asctime)s - %(levelname)s - %(message)s')
