@@ -156,12 +156,7 @@ async function submitQuery(message) {
         if (matchResult && matchResult[2]) {
             // Unescape newline and quotation characters
             let htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
-
-        if (matchResult && matchResult[2]) {
-            // Unescape newline and quotation characters
-            htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
-
-            // Dynamically convert markdown-like headings and preserve new lines
+             // Dynamically convert markdown-like headings and preserve new lines
             htmlContent = htmlContent
                 .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
                     const level = hashes.length; // Determine heading level based on number of #
