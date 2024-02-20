@@ -138,6 +138,18 @@ async function submitQuery(message) {
         const data = await response.json();
         console.log('Server response:', data);
 
+        let responseContent;
+        if (typeof data === 'string') {
+            // If the response is a string, display it directly
+            responseContent = data;
+        } else if (typeof data === 'object') {
+            // If the response is an object, stringify it or access its properties as needed
+            // This is just an example, you'll need to adjust this based on the actual structure of the object
+            responseContent = JSON.stringify(data, null, 2);
+        } else {
+            // If the response is a different type, convert it to a string
+            responseContent = String(data);
+        }
         // Extracting text, considering potential for different quotation marks in the pattern
         const regexPattern = /Text\(annotations=\[\], value=('|")([\s\S]*?)\1\)/;
         const matchResult = data.response.match(regexPattern);
