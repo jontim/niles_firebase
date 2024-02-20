@@ -151,7 +151,7 @@ async function submitQuery(message) {
             responseContent = String(data);
         }
         // Extracting text, considering potential for different quotation marks in the pattern
-        const regexPattern = /Text\(annotations=\[\], value=('|")([\s\S]*?)\1\)/;
+        const regexPattern = /Text\(annotations=\[.*?\], value=('|")(.*?)\1\)/s;
         const matchResult = data.response.match(regexPattern);
         let htmlContent = "";
 
