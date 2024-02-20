@@ -152,8 +152,10 @@ async function submitQuery(message) {
         }
         // Extracting text, considering potential for different quotation marks in the pattern
         const regexPattern = /Text\(annotations=\[.*?\], value=('|")(.*?)\1\)/s;
-        const matchResult = data.response.match(regexPattern);
-        let htmlContent = "";
+        const matchResult = responseContent.match(regexPattern);
+        if (matchResult && matchResult[2]) {
+            // Unescape newline and quotation characters
+            let htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
 
         if (matchResult && matchResult[2]) {
             // Unescape newline and quotation characters
