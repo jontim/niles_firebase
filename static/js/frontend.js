@@ -150,13 +150,15 @@ async function submitQuery(message) {
             // If the response is a different type, convert it to a string
             responseContent = String(data);
         }
+    
         // Extracting text, considering potential for different quotation marks in the pattern
         const regexPattern = /Text\(annotations=\[.*?\], value=('|")(.*?)\1\)/s;
         const matchResult = responseContent.match(regexPattern);
+        let htmlContent;
         if (matchResult && matchResult[2]) {
             // Unescape newline and quotation characters
-            let htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
-             // Dynamically convert markdown-like headings and preserve new lines
+            htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
+            // Dynamically convert markdown-like headings and preserve new lines
             htmlContent = htmlContent
                 .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
                     const level = hashes.length; // Determine heading level based on number of #
@@ -166,12 +168,12 @@ async function submitQuery(message) {
         } else {
             htmlContent = "No valid content found or response format is unexpected.";
         }
-
+    
         // Create a new div element to hold the processed content
         const newElement = document.createElement('div');
         newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
         responseBox.insertBefore(newElement, responseBox.firstChild);
-
+    
     } catch (error) {
         console.error('Error submitting query:', error);
         document.getElementById('response-box').textContent = 'Error: ' + error.message;
