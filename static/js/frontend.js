@@ -135,47 +135,47 @@ async function submitQuery(message) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
+       const data = await response.json();
         console.log('Server response:', data);
 
-        let responseContent;
-        if (typeof data === 'string') {
-            // If the response is a string, display it directly
-            responseContent = data;
-        } else if (typeof data === 'object') {
-            // If the response is an object, stringify it or access its properties as needed
-            // This is just an example, you'll need to adjust this based on the actual structure of the object
-            responseContent = JSON.stringify(data, null, 2);
-        } else {
-            // If the response is a different type, convert it to a string
-            responseContent = String(data);
+        try {
+            let responseContent;
+            if (typeof data === 'string') {
+                // If the response is a string, parse it as markdown
+                responseContent = marked(data);
+            } else if (typeof data === 'object' && data.response) {
+                // If the response is an object with a 'response' property, parse it as markdown
+                responseContent = marked(data.response);
+            } else {
+                // If the response is of an unexpected type or structure, convert it to a string
+                responseContent = String(data);
+            }
+        
+            // Extracting text using a regular expression
+            const regexPattern = /value=\\?"([^\\"]*)\\?"/;
+            const matchResult = responseContent.match(regexPattern);
+            let htmlContent;
+            if (matchResult && matchResult[1]) {
+                // Unescape HTML entities
+                htmlContent = matchResult[1].replace(/\\n/g, '\n').replace(/\\'/g, "'");
+            } else {
+                htmlContent = "No valid content found or response format is unexpected.";
+            }
+        
+            // Create a new div element to hold the processed content
+            const newElement = document.createElement('div');
+            newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
+            responseBox.insertBefore(newElement, responseBox.firstChild);
+        
+        } catch (error) {
+            console.error('Error processing server response:', error);
+            document.getElementById('response-box').textContent = 'Error: ' + error.message;
         }
-    
-        // Extracting text, considering potential for different quotation marks in the pattern
-        const regexPattern = /Text\(annotations=\[.*?\], value=('|")(.*?)\1\)/s;
-        const matchResult = responseContent.match(regexPattern);
-        let htmlContent;
-        if (matchResult && matchResult[2]) {
-            // Unescape newline and quotation characters
-            htmlContent = matchResult[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
-            // Dynamically convert markdown-like headings and preserve new lines
-            htmlContent = htmlContent
-                .replace(/(#+)\s*(.*?)\n/g, (match, hashes, text) => {
-                    const level = hashes.length; // Determine heading level based on number of #
-                    return `<h${level}>${text}</h${level}>`; // Convert to <h1>, <h2>, etc.
-                })
-                .replace(/\n/g, '<br>'); // Replace newline characters with <br> for HTML display
-        } else {
-            htmlContent = "No valid content found or response format is unexpected.";
-        }
-    
-        // Create a new div element to hold the processed content
-        const newElement = document.createElement('div');
-        newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
-        responseBox.insertBefore(newElement, responseBox.firstChild);
     
     } catch (error) {
-        console.error('Error submitting query:', error);
-        document.getElementById('response-box').textContent = 'Error: ' + error.message;
-    }
-}
+        console.error('Error processing server response:', error);
+
+        // Display a friendly error message
+        document.getElementById('response-box').innerHTML = `
+    <p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or contact support.</p>
+  `}}
