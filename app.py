@@ -20,7 +20,7 @@ logging.basicConfig(filename='app.log', level=logging.DEBUG,
 
 @app.route('/')
 def home():
-    return render_template('index_copy_V2.html')
+    return render_template('public/index.html')
 
 @app.route('/create_thread', methods=['POST'])
 def create_thread_route():
