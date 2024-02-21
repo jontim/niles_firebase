@@ -10,7 +10,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 let lastButtonClicked = null;
-let responseBox;
+
 // Authentication and User State Management
 async function authenticateUser() {
     console.log('Starting authentication process');
@@ -119,11 +119,7 @@ async function handleQuerySubmission() {
 
 // Query Submission
 // Parse HTML content without escaping markup
-function parseHtmlContent(htmlString) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, 'text/html');
-    return doc.body.textContent || "";
-}
+
 
 async function submitQuery(message) {
     console.log('Submitting query:', message);
@@ -161,73 +157,61 @@ async function submitQuery(message) {
 // Revised handleServerResponse to use the new cleaning function
 async function handleServerResponse(data) {
     try {
-        let extractedText = '';
+        let formattedContent = '';
         if (typeof data === 'object' && data.response) {
-            // Attempt to parse the response string as JSON, if applicable
-            const responseContent = data.response;
+            // First, extract the JSON-like string from the HTML
+            const htmlWrapper = document.createElement('div');
+            htmlWrapper.innerHTML = data.response;
+            const jsonString = htmlWrapper.textContent || htmlWrapper.innerText;
 
-            // Regex to extract the value content from the response
-            const valueRegex = /value='([^']*)'/;
-            const match = responseContent.match(valueRegex);
+            // Attempt to parse the jsonString to access the 'value'
+            const match = jsonString.match(/value=(['"])(.*?)\1/);
 
-            if (match && match[1]) {
-                // Decode escaped sequences and remove newlines
-                extractedText = match[1].replace(/\\n/g, '\n').replace(/\\'/g, "'");
-            } else {
-                extractedText = "No valid content found or response format is unexpected.";
+            if (match && match[2]) {
+                // Unescape and clean the extracted string
+                let extractedValue = match[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
+                extractedValue = stripHtmlAndConvert(extractedValue); // Clean up HTML
+
+                // Apply text formatting enhancements
+                formattedContent = enhanceTextFormatting(extractedValue);
             }
-        } else {
-            extractedText = "Response format is not recognized.";
         }
-
-        // Apply formatting enhancements
-       let formattedContent = enhanceTextFormatting(extractedText);
-       
-       function enhanceTextFormatting(textContent) {
-            // Convert Markdown bold to HTML <strong>
-            textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-            // Convert Markdown headings. This example only covers H1 and H2 for brevity.
-            textContent = textContent.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-            textContent = textContent.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-            textContent = textContent.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
-            textContent = textContent.replace(/^#### (.*?)$/gm, '<h4>$1</h4>');
-            textContent = textContent.replace(/^##### (.*?)$/gm, '<h5>$1</h5>');
-            // Optional: Convert other Markdown or HTML elements as needed
-            // For example, Markdown links [text](url) to HTML <a href="url">text</a>
-            textContent = textContent.replace(/\[([^\]]+)\]\((.*?)\)/g, '<a href="$2">$1</a>');
-        
-            // Return the enhanced text
-            return textContent;
-        }
-        
-        // Apply any additional cleaning or formatting
-        let cleanedContent = stripHtmlAndConvert(extractedText, true); // Assuming you want Markdown formatting
 
         // Create a new div element to hold the processed content
         const newElement = document.createElement('div');
-        newElement.innerHTML = `<strong>NILES:</strong> ${cleanedContent}`;
+        newElement.innerHTML = `<strong>NILES:</strong> ${formattedContent}`;
+
+        // Define responseBox and insert the new element
+        const responseBox = document.getElementById('response-box');
         responseBox.insertBefore(newElement, responseBox.firstChild);
     } catch (error) {
         console.error('Error processing server response:', error);
+        const responseBox = document.getElementById('response-box');
         responseBox.textContent = 'Error: ' + error.message;
     }
 }
 
+function stripHtmlAndConvert(htmlContent) {
+    // Remove HTML tags
+    let textContent = htmlContent.replace(/<[^>]*>/g, '');
 
-// Function to strip HTML tags and optionally convert to markdown
-function stripHtmlAndConvert(htmlContent, toMarkdown = false) {
-    if (toMarkdown) {
-        // Simple HTML to Markdown conversion (expand as needed)
-        htmlContent = htmlContent
-            .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
-            .replace(/<em>(.*?)<\/em>/g, '*$1*')
-            .replace(/<p>(.*?)<\/p>/g, '$1\n')
-            .replace(/<br\s*\/?>/g, '\n');
-    }
-    // Remove remaining HTML tags
-    htmlContent = htmlContent.replace(/<\/?[^>]+(>|$)/g, "");
-    return unescapeHtml(htmlContent);
+    // Convert HTML entities
+    textContent = textContent.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+
+    return textContent;
+}
+
+function enhanceTextFormatting(textContent) {
+    // Convert Markdown syntax to HTML
+    let formattedContent = textContent
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+        .replace(/## (.*?)(\n|$)/g, '<h2>$1</h2>') // Heading level 2
+        .replace(/# (.*?)(\n|$)/g, '<h1>$1</h1>') // Heading level 1
+        .replace(/\n/g, '<br>') // Line breaks
+        .replace(/- (.*?)(\n|$)/g, '<li>$1</li>'); // List items
+
+    return formattedContent;
 }
 
 // Utility function to unescape HTML entities
