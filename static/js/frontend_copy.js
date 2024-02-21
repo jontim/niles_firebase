@@ -157,51 +157,63 @@ async function submitQuery(message) {
     }
 }
 
- // Handle the server response
+
+// Revised handleServerResponse to use the new cleaning function
 async function handleServerResponse(data) {
     try {
-        let responseContent;
+        let extractedText = '';
         if (typeof data === 'object' && data.response) {
-            // If the response is an object with a 'response' property, parse it as HTML content
-            responseContent = data.response;
+            // Attempt to parse the response string as JSON, if applicable
+            const responseContent = data.response;
+
+            // Regex to extract the value content from the response
+            const valueRegex = /value='([^']*)'/;
+            const match = responseContent.match(valueRegex);
+
+            if (match && match[1]) {
+                // Decode escaped sequences and remove newlines
+                extractedText = match[1].replace(/\\n/g, '\n').replace(/\\'/g, "'");
+            } else {
+                extractedText = "No valid content found or response format is unexpected.";
+            }
         } else {
-            // If the response is of an unexpected type or structure, convert it to a string
-            responseContent = String(data);
+            extractedText = "Response format is not recognized.";
         }
 
-        // Define the regular expression pattern
-        const regexPattern = /value=\"([^\"]*)\"/;
-
-        // Use the regular expression to match the server response
-        const matchResult = responseContent.match(regexPattern);
-
-        let htmlContent;
-        if (matchResult && matchResult[1]) {
-            // If a match is found, unescape HTML entities
-            htmlContent = matchResult[1].replace(/\\n/g, '\n').replace(/\\'/g, "'");
-        } else {
-            // If no match is found, display an error message
-            htmlContent = "No valid content found or response format is unexpected.";
+        // Apply formatting enhancements
+       let formattedContent = enhanceTextFormatting(extractedText);
+       
+       function enhanceTextFormatting(textContent) {
+            // Convert Markdown bold to HTML <strong>
+            textContent = textContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+            // Convert Markdown headings. This example only covers H1 and H2 for brevity.
+            textContent = textContent.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+            textContent = textContent.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+            textContent = textContent.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+            textContent = textContent.replace(/^#### (.*?)$/gm, '<h4>$1</h4>');
+            textContent = textContent.replace(/^##### (.*?)$/gm, '<h5>$1</h5>');
+            // Optional: Convert other Markdown or HTML elements as needed
+            // For example, Markdown links [text](url) to HTML <a href="url">text</a>
+            textContent = textContent.replace(/\[([^\]]+)\]\((.*?)\)/g, '<a href="$2">$1</a>');
+        
+            // Return the enhanced text
+            return textContent;
         }
+        
+        // Apply any additional cleaning or formatting
+        let cleanedContent = stripHtmlAndConvert(extractedText, true); // Assuming you want Markdown formatting
 
         // Create a new div element to hold the processed content
         const newElement = document.createElement('div');
-        newElement.innerHTML = `<strong>NILES:</strong> ${htmlContent}`;
+        newElement.innerHTML = `<strong>NILES:</strong> ${cleanedContent}`;
         responseBox.insertBefore(newElement, responseBox.firstChild);
     } catch (error) {
         console.error('Error processing server response:', error);
-        document.getElementById('response-box').textContent = 'Error: ' + error.message;
+        responseBox.textContent = 'Error: ' + error.message;
     }
 }
-// Utility function to unescape HTML entities
-function unescapeHtml(safe) {
-    return safe
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#039;/g, "'");
-}
+
 
 // Function to strip HTML tags and optionally convert to markdown
 function stripHtmlAndConvert(htmlContent, toMarkdown = false) {
@@ -218,26 +230,12 @@ function stripHtmlAndConvert(htmlContent, toMarkdown = false) {
     return unescapeHtml(htmlContent);
 }
 
-// Revised handleServerResponse to use the new cleaning function
-async function handleServerResponse(data) {
-    try {
-        let responseContent = '';
-        if (typeof data === 'object' && data.response) {
-            // Assuming the response is already a string like the examples given
-            responseContent = data.response;
-        } else {
-            responseContent = String(data);
-        }
-
-        // Extract and clean the content, set toMarkdown true if you want markdown
-        let cleanedContent = stripHtmlAndConvert(responseContent, true); // or false for plain text
-
-        // Create a new div element to hold the processed content
-        const newElement = document.createElement('div');
-        newElement.innerHTML = `<strong>NILES:</strong> ${cleanedContent}`;
-        responseBox.insertBefore(newElement, responseBox.firstChild);
-    } catch (error) {
-        console.error('Error processing server response:', error);
-        responseBox.textContent = 'Error: ' + error.message;
-    }
+// Utility function to unescape HTML entities
+function unescapeHtml(safe) {
+    return safe
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#039;/g, "'");
 }
