@@ -9,6 +9,8 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
+
+
 let lastButtonClicked = null;
 
 // Authentication and User State Management
@@ -32,6 +34,22 @@ async function authenticateUser() {
         toggleContentVisibility(false);
     }
 }
+
+let thread_id = null; 
+
+async function initializeConversation() {
+    const user = firebase.auth().currentUser;
+    if (user) { 
+        const conversationRef = db.collection('conversations').doc(user.uid);
+        const conversationSnapshot = await conversationRef.get();
+
+        if (conversationSnapshot.exists) { 
+            const conversationData = conversationSnapshot.data();
+            thread_id = conversationData.thread_id; 
+        } 
+    }
+}
+
 
 function toggleContentVisibility(isLoggedIn) {
     document.getElementById('publicContent').style.display = isLoggedIn ? 'none' : 'block';
@@ -89,9 +107,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function extractValueFromResponse(response) {
+    // Use a regular expression to match the value pattern
+    const match = response.match(/value=(['"])(.*?)\1/);
+
+    // If a match was found, the second element of the array is the value
+    const value = match ? match[2] : '';
+
+    // Unescape and clean the extracted string
+    const cleanedValue = value.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
+
+    return cleanedValue;
+}
+
+let thread_id = null; // Initialize the thread_id variable
+// Function to fetch conversation data when the app initializes or a user logs in
+async function initializeConversation() {
+    const user = firebase.auth().currentUser;
+    if (user) { 
+        const conversationRef = db.collection('conversations').doc(user.uid);
+        const conversationSnapshot = await conversationRef.get();
+
+        if (conversationSnapshot.exists) { 
+            const conversationData = conversationSnapshot.data();
+            thread_id = conversationData.thread_id; 
+        } else {
+            // No conversation exists - You have a few options:
+            // Option 1: Start a new conversation automatically
+              submitQuery("Hello, can you help me?"); // Or any starting message 
+
+            // Option 2: Display a message to the user prompting them to start a conversation
+            // Option 3: Do nothing, and wait for the user to initiate manually  
+        }
+    }
+}
+
 async function handleQuerySubmission() {
     // Get the user's query
     const queryInput = document.getElementById('query-input');
+    const message = queryInput; 
+    await submitQuery(message); 
+   
+}
+    
     const query = queryInput.value;
 
     // Clear the input field
@@ -124,14 +182,15 @@ async function handleQuerySubmission() {
 async function submitQuery(message) {
     console.log('Submitting query:', message);
     responseBox = document.getElementById('response-box');
-    const requestData = { prompt: message };
+    const requestData = { 
+        prompt: message,
+        thread_id: thread_id 
+    }; 
 
     try {
-        const response = await fetch('/create_thread', {
+        const response = await fetch('/create_thread', { // Assuming your Cloud Function URL
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData)
         });
 
@@ -159,22 +218,11 @@ async function handleServerResponse(data) {
     try {
         let formattedContent = '';
         if (typeof data === 'object' && data.response) {
-            // First, extract the JSON-like string from the HTML
-            const htmlWrapper = document.createElement('div');
-            htmlWrapper.innerHTML = data.response;
-            const jsonString = htmlWrapper.textContent || htmlWrapper.innerText;
+            // Extract the 'value' from the response string
+            const extractedValue = extractValueFromResponse(data.response);
 
-            // Attempt to parse the jsonString to access the 'value'
-            const match = jsonString.match(/value=(['"])(.*?)\1/);
-
-            if (match && match[2]) {
-                // Unescape and clean the extracted string
-                let extractedValue = match[2].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\'/g, "'");
-                extractedValue = stripHtmlAndConvert(extractedValue); // Clean up HTML
-
-                // Apply text formatting enhancements
-                formattedContent = enhanceTextFormatting(extractedValue);
-            }
+            // Apply text formatting enhancements
+            formattedContent = enhanceTextFormatting(extractedValue);
         }
 
         // Create a new div element to hold the processed content
@@ -190,7 +238,6 @@ async function handleServerResponse(data) {
         responseBox.textContent = 'Error: ' + error.message;
     }
 }
-
 function stripHtmlAndConvert(htmlContent) {
     // Remove HTML tags
     let textContent = htmlContent.replace(/<[^>]*>/g, '');
@@ -223,3 +270,5 @@ function unescapeHtml(safe) {
         .replace(/&quot;/g, '"')
         .replace(/&#039;/g, "'");
 }
+// Initialization on user login or app load 
+initializeConversation(); 

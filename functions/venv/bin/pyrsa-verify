@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/jonathanmartin/Projects/python for firebase/functions/venv/bin/python3.11" "$0" "$@"
+'''exec' "/Users/jonathanmartin/Projects/python for firebase/functions/venv/bin/python3.12" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
