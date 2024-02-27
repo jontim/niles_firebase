@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["https:https://askniles-415514.web.app","https://askniles-415514.firebaseapp.com"],
+      "method": ["POST","FETCH"],
+      "responseHeader": ["Content-Type", "application/json"],["Content-Type","text/plain"]
+      "maxAgeSeconds": 3600
+    }
+]
