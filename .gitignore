@@ -12,6 +12,7 @@ firebase-debug.*.log*
 
 # Firebase config
 niles-8df14-firebase-adminsdk-iy45i-99b9c2e9f1.json
+askniles-firebase-adminsdk-e6l9y-4e1e7df5ff.json
 # Uncomment this if you'd like others to create their own Firebase project.
 # For a team working on the same Firebase project(s), it is recommended to leave
 # it commented so all members can deploy to the same project(s) in .firebaserc.
@@ -64,3 +65,6 @@ node_modules/
 
 # dotenv environment variables file
 .env
+app.yaml
+
+legacy

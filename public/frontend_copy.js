@@ -1,19 +1,23 @@
-// Initialize Firebase App
 const firebaseConfig = {
-    apiKey: "AIzaSyAynmQqe48qCKh5HhyCQ96hnUA2b-Mz2FU",
-    authDomain: "niles-8df14.firebaseapp.com",
-    projectId: "niles-8df14",
-    storageBucket: "niles-8df14.appspot.com",
-    messagingSenderId: "728013158555",
-    appId: "1:728013158555:web:ac787693ac988a87d76e3e",
+  apiKey: "AIzaSyBmDuLmCAFcSgdI8gS6h2Wwlb4X2NZ71cU",
+  authDomain: "askniles.firebaseapp.com",
+  projectId: "askniles",
+  storageBucket: "askniles.appspot.com",
+  messagingSenderId: "579770924",
+  appId: "1:579770924:web:4dd2af511c52c1b5904f89",
+  measurementId: "G-52DZF3FQ4M"
 };
-firebase.initializeApp(firebaseConfig);
 
-
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const analytics = firebase.analytics();
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 let lastButtonClicked = null;
 
 // Authentication and User State Management
+let userName = null;
 async function authenticateUser() {
     console.log('Starting authentication process');
     try {
@@ -21,6 +25,7 @@ async function authenticateUser() {
         provider.setCustomParameters({ hd: "neuroleadership.com" });
         const result = await firebase.auth().signInWithPopup(provider);
         const user = result.user;
+        userName = user.displayName.split(' ')[0]; // Extract the first name
 
         if (!user.email.endsWith("@neuroleadership.com")) {
             throw new Error("Access restricted to neuroleadership.com domain.");
@@ -28,28 +33,59 @@ async function authenticateUser() {
 
         document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
         toggleContentVisibility(true);
+        
+       
+
+        // Initialize the conversation after the user has been authenticated
+        await initializeConversation();
     } catch (error) {
         console.error('Authentication error:', error);
         document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
         toggleContentVisibility(false);
     }
 }
-
+   
 let thread_id = null; 
 
 async function initializeConversation() {
     const user = firebase.auth().currentUser;
     if (user) { 
-        const conversationRef = db.collection('conversations').doc(user.uid);
-        const conversationSnapshot = await conversationRef.get();
+        const response = await fetch('https://askniles-415514.uc.r.appspot.com/check_conversation', { // Replace with your Flask app's URL
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
+            mode: 'cors'
+        });
 
-        if (conversationSnapshot.exists) { 
-            const conversationData = conversationSnapshot.data();
-            thread_id = conversationData.thread_id; 
-        } 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.thread_id) {
+            // A conversation exists - get the thread_id
+            thread_id = data.thread_id; 
+        } else {
+            // No conversation exists - start a new conversation
+            const threadResponse = await fetch('https://askniles-415514.uc.r.appspot.com/create_thread', { // Replace with your Flask app's URL
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: 'Hello' }) // Pass an initial prompt to the function
+            });
+
+            if (!threadResponse.ok) {
+                throw new Error(`HTTP error! status: ${threadResponse.status}`);
+            }
+
+            const threadData = await threadResponse.json();
+            thread_id = threadData.thread_id;
+
+            // Store the thread_id in Firestore
+            const conversationRef = db.collection('conversations').doc(user.uid);
+            await conversationRef.set({ thread_id: thread_id });
+        }
     }
 }
-
 
 function toggleContentVisibility(isLoggedIn) {
     document.getElementById('publicContent').style.display = isLoggedIn ? 'none' : 'block';
@@ -120,7 +156,7 @@ function extractValueFromResponse(response) {
     return cleanedValue;
 }
 
-let thread_id = null; // Initialize the thread_id variable
+
 // Function to fetch conversation data when the app initializes or a user logs in
 async function initializeConversation() {
     const user = firebase.auth().currentUser;
@@ -128,16 +164,28 @@ async function initializeConversation() {
         const conversationRef = db.collection('conversations').doc(user.uid);
         const conversationSnapshot = await conversationRef.get();
 
-        if (conversationSnapshot.exists) { 
+        if (!conversationSnapshot.exists) { 
+            // No conversation exists - start a new conversation
+            const response = await fetch('https://askniles-415514.uc.r.appspot.com/create_thread', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
+                mode: 'cors'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            thread_id = data.thread_id;
+
+            // Store the thread_id in Firestore
+            await conversationRef.set({ thread_id: thread_id });
+        } else {
+            // A conversation exists - get the thread_id
             const conversationData = conversationSnapshot.data();
             thread_id = conversationData.thread_id; 
-        } else {
-            // No conversation exists - You have a few options:
-            // Option 1: Start a new conversation automatically
-              submitQuery("Hello, can you help me?"); // Or any starting message 
-
-            // Option 2: Display a message to the user prompting them to start a conversation
-            // Option 3: Do nothing, and wait for the user to initiate manually  
         }
     }
 }
@@ -145,19 +193,14 @@ async function initializeConversation() {
 async function handleQuerySubmission() {
     // Get the user's query
     const queryInput = document.getElementById('query-input');
-    const message = queryInput; 
-    await submitQuery(message); 
-   
-}
-    
-    const query = queryInput.value;
+    const message = queryInput.value; 
 
     // Clear the input field
     queryInput.value = '';
 
     // Display the user's query in the response box immediately
-   
-    responseBox.innerHTML = `<p><strong>User:</strong> ${query}</p>` + responseBox.innerHTML;
+    const userLabel = userName || 'User';
+    responseBox.innerHTML = `<p style="color:#FF4500;"><strong>${userLabel}:</strong> ${message}</p>` + responseBox.innerHTML;
 
     // Wait for a short delay
     await new Promise(resolve => setTimeout(resolve, 2500)); // Adjust the delay as needed
@@ -168,16 +211,12 @@ async function handleQuerySubmission() {
     typingMessage.innerHTML = '<em>NILES is typing...</em>';
     responseBox.insertBefore(typingMessage, responseBox.firstChild);
 
-
     // Submit the query
-    await submitQuery(query);
+    await submitQuery(message);
+
     // Remove the "NILES is typing..." message
     typingMessage.remove();
 }
-
-// Query Submission
-// Parse HTML content without escaping markup
-
 
 async function submitQuery(message) {
     console.log('Submitting query:', message);
@@ -188,11 +227,13 @@ async function submitQuery(message) {
     }; 
 
     try {
-        const response = await fetch('/create_thread', { // Assuming your Cloud Function URL
+        const response = await fetch('https://askniles-415514.uc.r.appspot.com/submit_query', { // Replace with your Flask app's URL
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            mode: 'cors'
         });
+
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -211,8 +252,6 @@ async function submitQuery(message) {
         responseBox.innerHTML = `<p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or contact support.</p>`;
     }
 }
-
-
 // Revised handleServerResponse to use the new cleaning function
 async function handleServerResponse(data) {
     try {

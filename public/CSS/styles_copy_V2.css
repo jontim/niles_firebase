@@ -56,7 +56,6 @@ header {
 }
 
 #query-input, #ask-button, #loginButton {
-    width: 100%;
     padding: 5px;
     margin: 5px auto;
     border: 1px solid #ccc;
@@ -66,6 +65,7 @@ header {
     display: flex;
     justify-content: space-between;
     width: 100%;
+    margin: auto;
 }
 
 #query-input {
@@ -92,6 +92,10 @@ header {
     padding: 10px;
     font-size:14px;
     text-align: left;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #loginButton {
@@ -175,20 +179,38 @@ header {
     padding: 3px;
 }
 
+#intro-container, #user-query-container, #response-box {
+    width: 33%;  /* Adjust as needed */
+    max-width: 800px;
+    margin: auto;  /* Prevent the elements from becoming too wide on large screens */
+}
+
+#user-query-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+#query-input {
+    flex-grow: 1;
+    margin-right: 10px; /* Adjust as needed */
+}
+
+#ask-button {
+    width: 100px; /* Adjust as needed */
+}
+
 #intro-container {
     background-color: rgba(221, 252, 255, 0.993);
     display: flex;
     flex-direction: column;
     align-items: center;
     margin-top: 2px;
-    width: 50%;
     margin-bottom: 30px;
     border-radius: 5px;
 }
 #intro-container1 {
     background-color: rgba(221, 252, 255, 0.993);
     margin-top: 2px;
-    width: 50%;
     margin-bottom: 30px;
     border-radius: 5px;
 }
@@ -204,7 +226,6 @@ footer {
     font-size: 14px;
     color: grey;
     padding: 10px;
-    width: 100%;
     align-items: center;
     border-radius: 5px;
 }
@@ -214,7 +235,6 @@ footer {
     font-size: 14px;
     color: grey;
     padding: 10px;
-    width: 100%;
     align-items: center;
     border-radius: 5px;
     
