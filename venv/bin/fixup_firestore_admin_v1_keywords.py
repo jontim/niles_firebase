@@ -1,4 +1,4 @@
-#!/Users/jonathanmartin/Projects/python for firebase/venv/bin/python3.11
+#!/Users/jonathanmartin/Projects/python_current_fb_ae/venv/bin/python3.11
 # -*- coding: utf-8 -*-
 # Copyright 2023 Google LLC
 #
@@ -47,7 +47,6 @@ class firestore_adminCallTransformer(cst.CSTTransformer):
     METHOD_TO_PARAMS: Dict[str, Tuple[str]] = {
         'create_database': ('parent', 'database', 'database_id', ),
         'create_index': ('parent', 'index', ),
-        'delete_database': ('name', 'etag', ),
         'delete_index': ('name', ),
         'export_documents': ('name', 'collection_ids', 'output_uri_prefix', 'namespace_ids', 'snapshot_time', ),
         'get_database': ('name', ),

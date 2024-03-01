@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/jonathanmartin/Projects/python for firebase/venv/bin/python3.11" "$0" "$@"
-' '''
+#!/Users/jonathanmartin/Projects/python_current_fb_ae/venv/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys

@@ -1,29 +1,34 @@
 from flask import Flask, request, session, render_template, jsonify, make_response
 import openai
 import time
+import sys
 import logging
-import markdown2
 from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
 import traceback
-from firebase_admin import firestore, auth
-import firebase_admin
+import firebase_admin 
+from firebase_admin import firestore, auth, credentials
 
-firebase_admin.initialize_app()
+
+
+cred = credentials.Certificate('nileslead-firebase-adminsdk-jt2wv-308b7ef8e5.json')
+firebase_admin.initialize_app(cred)
 load_dotenv()
 import os
 
 app = Flask(__name__) 
-CORS(app, supports_credentials=True, origins=["https://askniles-415514.web.app","https://askniles-415514.firebaseapp.com"])
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for all routes
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 assistant_id = os.getenv('ASSISTANT_ID')
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+# logging.DEBUG('This message will go to the log file')
 
 @app.route('/')
 def home():
-    return render_template('/public/index.html')
+    return render_template('index.html')
 
 @app.before_request
 def start_request():
@@ -33,24 +38,19 @@ def start_request():
 def log_response(response):
     logging.info(f"Response status: {response.status_code}")
     return response
+    
 
 @app.errorhandler(Exception)
-@cross_origin(origins=["https://askniles-415514.web.app","https://askniles-415514.firebaseapp.com"])
 def handle_unexpected_error(e):
     logging.error(f"Unexpected error: {str(e)}")
     logging.error(traceback.format_exc())
     return {'error': 'An unexpected error occurred.'}, 500
 
-
-@app.route('/check_conversation', methods=['POST'])
+start_time = time.time()
+@app.route('/check_conversation', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='*', headers=['Content-Type','Authorization'])
 def check_conversation():
-    if request.method == 'OPTIONS':
-        app.logger.info('Handling OPTIONS request')
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
+    
     user_uid = request.json.get('userUID')
 
     # Get a reference to the Firestore database
@@ -83,42 +83,48 @@ def check_conversation():
             'userId': user_uid,
             'name': user_name
         })
+        return jsonify({'message': 'New conversation created'}), 200
 
-        response = make_response(jsonify({'message': 'Conversation checked/created successfully'}), 200)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+end_time = time.time()
 
-@app.route('/create_thread', methods=['POST'])
+print(f"Execution time: {end_time - start_time} seconds")
+        
+start_time = time.time()
+@app.route('/create_thread', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='*', headers=['Content-Type','Authorization'])
 def create_thread():
-    if request.method == 'OPTIONS':
-        app.logger.info('Handling OPTIONS request')
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
-    prompt = request.json.get('prompt')
-    if not prompt:
-        return {'error': 'No prompt provided'}, 400
+    # Check if the request has a JSON body
+    if not request.is_json:
+        app.logger.error("Request does not contain a JSON body")
+        return jsonify({'error': 'Bad Request - Request must be JSON'}), 400
 
-    thread = openai.beta.threads.create()
-    thread_id = thread.id
-    session['thread_id'] = thread_id
+    # Attempt to get the 'prompt' from the JSON body
+    # data = request.get_json(silent=True)
+    # prompt = data.get('prompt') if data else None
 
-    response = make_response(jsonify({'thread_id': thread_id}), 200)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+    # if not prompt:
+    #     app.logger.error("No 'prompt' provided in the request")
+    #     return jsonify({'error': 'No prompt provided'}), 400
+    try:
+        thread = openai.beta.threads.create()
+        thread_id = thread.id
+        session['thread_id'] = thread_id
+        return jsonify({'message': 'Thread created', 'thread_id': thread_id}), 200
+       
+    except Exception as e:
+        # Log the exception along with any relevant details
+        app.logger.error(f"Failed to create thread in OpenAI: {e}")
+        return jsonify({'error': 'Failed to create thread'}), 500
+end_time = time.time()
 
-@app.route('/submit_query', methods=['POST'])
+print(f"Execution time: {end_time - start_time} seconds")
+
+start_time = time.time()
+@app.route('/submit_query', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='*', headers=['Content-Type','Authorization'])
 def submit_query():
     logging.info("Received request for /submit_query")  # Log when a request is received
-    if request.method == 'OPTIONS':
-        app.logger.info('Handling OPTIONS request')
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
+    
     prompt = request.json.get('prompt')
     thread_id = request.json.get('thread_id')
 
@@ -140,27 +146,44 @@ def submit_query():
             assistant_id=assistant_id           
         )
         logging.info(f"Run created with id: {run.id}")
-
+        start_time = time.time()
         while True:
             run = openai.beta.threads.runs.retrieve(run.id, thread_id=thread_id)
             if run.status == "completed":
                 messages = openai.beta.threads.messages.list(thread_id=thread_id).data
                 assistant_messages = [m for m in messages if m.role == "assistant"]
                 last_message = sorted(assistant_messages, key=lambda m: m.created_at)[-1]
-                markdown_response = ''.join(str(item.text) for item in last_message.content)
-                html = markdown2.markdown(markdown_response)
-                logging.info(f"Response from OpenAI API: {html}")  # Log the response from the OpenAI API
-                response = make_response({'response': html})
-                response.headers.add('Access-Control-Allow-Origin', '*')
-                return response
+                logging.info(f"Response from OpenAI API: {last_message.content}")  # Log the response from the OpenAI API
+                
+                # Check the type of last_message.content and handle accordingly
+                if isinstance(last_message.content, list):
+                    # If it's a list, extract the 'value' attribute from the 'text' attribute of each object in the list
+                    response = [content.text.value for content in last_message.content if hasattr(content.text, 'value')]
+                elif hasattr(last_message.content.text, 'value'):
+                    # If it's not a list, but an object with a 'value' attribute, wrap the 'value' in an array
+                    response = [last_message.content.text.value]
+                else:
+                    # If it's neither a list nor an object with a 'value' attribute, wrap the content as is in an array
+                    response = [last_message.content]
+
+                # Send the response to the client
+                return jsonify({'response': response}), 200
+
             elif run.status == "failed":
                 logging.error(f"Run failed: {run}")
                 raise Exception("Run failed")
+
+            if time.time() - start_time > 60:  # Timeout after 60 seconds
+                return jsonify({'error': 'Timeout waiting for response from AI assistant'}), 500
+
             time.sleep(1)
 
     except Exception as e: 
         logging.error(f"Error processing prompt: {e}")
         return {'error': 'There was an error communicating with the AI assistant.'}, 500
+
+end_time = time.time()
+print(f"Execution time: {end_time - start_time} seconds")
 # if __name__ == '__main__':
 #      app.run(host='0.0.0.0',port=5001, debug=True)
     

@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["https://nileslead.web.app", "https://nileslead.firebaseapp.com"],
+      "responseHeader": ["Content-Type"],
+      "method": ["GET", "HEAD", "DELETE", "POST", "OPTIONS"],
+      "maxAgeSeconds": 3600
+    }
+  ]

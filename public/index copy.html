@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to NILES</title>
+    <link rel="stylesheet" href="CSS/styles_copy_V2.css">
+    <link rel="icon" href="favicon-48x48.png" type="image/png">
+    <audio id="buttonSound" src="mouse-click.wav" preload="auto"></audio>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<!--FONT AWESOME-->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">    
+<script src="https://kit.fontawesome.com/0ab5788acc.js" crossorigin="anonymous"></script>
+
+  </head>
+  <body>
+    <div id="loginStatus"> </div>
+    <div id="publicContent">
+      <header>
+         <div id="hero-container1">
+              <img src="NILES_Logo_Inline.png" alt="NILES" id="hero-image1">
+          </div>
+      </header>
+        <div class="intro-container1"><h3>Welcome to NILES</h3>
+  <p>Please log in to get started</p></div><br>
+  
+  <div><button id="loginButton">Log In</button></div>
+  <footer><img src="NLI LOGO inline RGB.png" alt="Company Logo" id="company-logo"><br>
+   
+   <p style ="line-height: 1; font-size: small; font-style: italic;"> Usage of NILES and related content is subject to your <a href="https://hub.neuroleadership.com/hubfs/%5BGlobal%20-%20B2C%5D%20LEAD%20Habit%20Activation%20Platform/End%20User%20License%20Agreement_30Nov23.pdf">End User License Agreement.</a></p><br> 
+   <p style ="line-height: 1; font-size: small; font-style: italic;">We take your data security seriously — <a href="https://neuroleadership.com/privacy">access our privacy policy here.</a></p>
+   <p style ="line-height: 1; font-size: small; font-style: italic;">By signing in you agree to our terms and conditions.</p>
+  </footer>
+  </div>
+  <div id="privateContent" style="display: none;">
+      
+    <div id="hero-container">
+        <img src="NILES_Logo_Inline.png" alt="NILES" id="hero-image">
+    </div>
+    <div class="intro-container"><h3>NILES: Your Trusted Leadership Advisor</h3>
+      <p>What support do you want from NILES today?<br>
+        Be as specific in your prompt as possible, more context allows NILES to provide better answers.<br>
+        Please select the button below to enter your question.<br>
+        Please keep in mind that NILES is still learning. Make sure you use common sense and double check your data for big decisions.</p>
+    </div>  
+ <div class="button-container">
+ 
+      <!-- <button class="circle-button" id="coachingButton" data-value= "1" title="NILES will ask you questions to help you generate new insights about an existing challenge you haven't solved yet, or alternatively you can prompt NILES with 'can I get some feedbacK about [insert what you're thinking of doing]' and NILES will give you feedback on the approach.">Get Coaching</button>
+       <button class="circle-button" id="questionButton" data-value="2" title="Ask NILES about anything related to leadership - it could be advice on an approach, it could be about LEAD content you're grappling with, or it could be about anything to do with the neuroscience of leadership."> --> 
+        <!-- <div class="button-top"> -->
+            <!-- <i class="fa-solid fa-circle-question"></i> -->
+            <!-- <span>Ask a question.</span> -->
+        <!-- </div> -->
+        <!-- <p>Get science-backed answers to your leadership questions</p> -->
+    <!-- </button> -->
+      <!-- <button class="circle-button" id="practiceButton" data-value="3" title="NILES will help you practice any skill from LEAD or help you implement any of frameworks you've learned about. Just tell NILES in your question what the skill is and it will recommend the best practice strategy, and with your agreement, implement that strategy.">Practice a Skill</button> -->
+</div> 
+
+<p style="font-style: italic;">How can I help you lead today?</p> 
+    <div id="user-query-container"> 
+        <input type="text" id="query-input" placeholder="What would you like NILES' help with?">
+        <button id="ask-button" style="color: #0096DE; color: white;">Ask</button>
+    </div>
+    <div id="response-box">
+           <div id="processing" style="display: none;">Processing...</div>
+      <div id="loader" class="loader" hidden=""></div>
+
+    <!-- </div>
+    </div> -->
+    </div>
+<!-- <div class="card__side card__side--back"> -->
+    <!-- <img src="NLI LOGO inline White (1).png" alt="NLI Logo white" id="logo-blanco"> -->
+<!-- </div> -->
+<footer>
+    <img src="NLI LOGO inline RGB.png" alt="Company Logo" id="company-logo"> 
+  
+</footer></div>
+      
+     
+   
+<script src="frontend_copy.js"></script>
+
+</body>   
+</html>

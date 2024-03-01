@@ -1,91 +1,103 @@
+// Import the functions you need from the SDKs you need
+
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBmDuLmCAFcSgdI8gS6h2Wwlb4X2NZ71cU",
-  authDomain: "askniles.firebaseapp.com",
-  projectId: "askniles",
-  storageBucket: "askniles.appspot.com",
-  messagingSenderId: "579770924",
-  appId: "1:579770924:web:4dd2af511c52c1b5904f89",
-  measurementId: "G-52DZF3FQ4M"
+  apiKey: "AIzaSyD_UKLg9cuxXMov7O3oyVsWqmTD5xHL2gk",
+  authDomain: "nileslead.firebaseapp.com",
+  projectId: "nileslead",
+  storageBucket: "nileslead.appspot.com",
+  messagingSenderId: "844365075368",
+  appId: "1:844365075368:web:59e7c5c204ebaa4e81839d"
 };
 
 // Initialize Firebase
 const app = firebase.initializeApp(firebaseConfig);
-const analytics = firebase.analytics();
-const auth = firebase.auth();
 const db = firebase.firestore();
+const auth = firebase.auth();
 
 let lastButtonClicked = null;
+// Set Firebase Auth persistence
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .catch((error) => {
+    console.error("Error setting persistence:", error);
+  });
 
-// Authentication and User State Management
-let userName = null;
+// Define the authenticateUser function
 async function authenticateUser() {
     console.log('Starting authentication process');
     try {
-        const provider = new firebase.auth.GoogleAuthProvider();
+        const provider = new firebase.auth.GoogleAuthProvider()
         provider.setCustomParameters({ hd: "neuroleadership.com" });
         const result = await firebase.auth().signInWithPopup(provider);
         const user = result.user;
         userName = user.displayName.split(' ')[0]; // Extract the first name
-
+        console.log('Authentication successful', user);
+        
         if (!user.email.endsWith("@neuroleadership.com")) {
             throw new Error("Access restricted to neuroleadership.com domain.");
         }
 
         document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
         toggleContentVisibility(true);
-        
-       
-
+ 
         // Initialize the conversation after the user has been authenticated
         await initializeConversation();
+        document.getElementById('query-input').focus();
     } catch (error) {
         console.error('Authentication error:', error);
         document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
         toggleContentVisibility(false);
     }
 }
-   
+
+  
+
 let thread_id = null; 
 
-async function initializeConversation() {
-    const user = firebase.auth().currentUser;
-    if (user) { 
-        const response = await fetch('https://askniles-415514.uc.r.appspot.com/check_conversation', { // Replace with your Flask app's URL
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
-            mode: 'cors'
-        });
+// async function initializeConversation() {
+//     const user = auth.currentUser;
+//     if (user) { 
+//         console.log('Request to initialize conversation sent', { userUID: user.uid });
+//         const response = await fetch('https://nileslead.uc.r.appspot.com/check_conversation', { // Replace with your Flask app's URL
+//             method: 'POST',
+//             headers: { 'Content-Type': 'application/json' },
+//             body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
+//             mode: 'cors'
+//         });
+//         console.log('Response received', response);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+//         if (!response.ok) {
+//             throw new Error(`HTTP error! status: ${response.status}`);
+//         }
 
-        const data = await response.json();
-        if (data.thread_id) {
-            // A conversation exists - get the thread_id
-            thread_id = data.thread_id; 
-        } else {
-            // No conversation exists - start a new conversation
-            const threadResponse = await fetch('https://askniles-415514.uc.r.appspot.com/create_thread', { // Replace with your Flask app's URL
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: 'Hello' }) // Pass an initial prompt to the function
-            });
+//         const data = await response.json();
+//         if (data.thread_id) {
+//             // A conversation exists - get the thread_id
+//             thread_id = data.thread_id; 
+//         } else {
+//             // No conversation exists - start a new conversation
+//             const threadResponse = await fetch('https://nileslead.uc.r.appspot.com/create_thread', { // Replace with your Flask app's URL
+//                 method: 'POST',
+//                 headers: { 'Content-Type': 'application/json' },
+//                 body: JSON.stringify({ prompt: 'Hello' }) // Pass an initial prompt to the function
+//             });
 
-            if (!threadResponse.ok) {
-                throw new Error(`HTTP error! status: ${threadResponse.status}`);
-            }
+//             if (!threadResponse.ok) {
+//                 throw new Error(`HTTP error! status: ${threadResponse.status}`);
+//             }
 
-            const threadData = await threadResponse.json();
-            thread_id = threadData.thread_id;
+//             const threadData = await threadResponse.json();
+//             thread_id = threadData.thread_id;
 
-            // Store the thread_id in Firestore
-            const conversationRef = db.collection('conversations').doc(user.uid);
-            await conversationRef.set({ thread_id: thread_id });
-        }
-    }
-}
+//             // Store the thread_id in Firestore
+//             const conversationRef = db.collection('conversations').doc(user.uid);
+//             await conversationRef.set({ thread_id: thread_id });
+//         }
+//     }
+// }
 
 function toggleContentVisibility(isLoggedIn) {
     document.getElementById('publicContent').style.display = isLoggedIn ? 'none' : 'block';
@@ -95,8 +107,8 @@ function toggleContentVisibility(isLoggedIn) {
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loginButton').addEventListener('click', authenticateUser);
-    document.getElementById('questionButton').addEventListener('click', function() {
-        this.classList.add('active');
+    // document.getElementById('questionButton').addEventListener('click', function() {
+        // this.classList.add('active');
     });
    
     responseBox = document.getElementById('response-box');
@@ -141,7 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
             handleQuerySubmission();
         }
     });
-});
 
 function extractValueFromResponse(response) {
     // Use a regular expression to match the value pattern
@@ -166,7 +177,7 @@ async function initializeConversation() {
 
         if (!conversationSnapshot.exists) { 
             // No conversation exists - start a new conversation
-            const response = await fetch('https://askniles-415514.uc.r.appspot.com/create_thread', {
+            const response = await fetch('https://nileslead.uc.r.appspot.com/create_thread', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
@@ -227,7 +238,7 @@ async function submitQuery(message) {
     }; 
 
     try {
-        const response = await fetch('https://askniles-415514.uc.r.appspot.com/submit_query', { // Replace with your Flask app's URL
+        const response = await fetch('https://nileslead.uc.r.appspot.com/submit_query', { // Replace with your Flask app's URL
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData),
@@ -256,10 +267,9 @@ async function submitQuery(message) {
 async function handleServerResponse(data) {
     try {
         let formattedContent = '';
-        if (typeof data === 'object' && data.response) {
+        if (data.response && typeof data.response[0] === 'string') {
             // Extract the 'value' from the response string
-            const extractedValue = extractValueFromResponse(data.response);
-
+            const extractedValue = data.response[0];
             // Apply text formatting enhancements
             formattedContent = enhanceTextFormatting(extractedValue);
         }
@@ -290,6 +300,7 @@ function stripHtmlAndConvert(htmlContent) {
 function enhanceTextFormatting(textContent) {
     // Convert Markdown syntax to HTML
     let formattedContent = textContent
+        .replace(/\\'/g, "'") // Handle escaped apostrophes
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
         .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
         .replace(/## (.*?)(\n|$)/g, '<h2>$1</h2>') // Heading level 2
@@ -309,5 +320,3 @@ function unescapeHtml(safe) {
         .replace(/&quot;/g, '"')
         .replace(/&#039;/g, "'");
 }
-// Initialization on user login or app load 
-initializeConversation(); 

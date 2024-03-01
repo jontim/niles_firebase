@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/Users/jonathanmartin/Projects/python for firebase/venv"
+VIRTUAL_ENV="/Users/jonathanmartin/Projects/python_current_fb_ae/venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
