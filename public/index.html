@@ -7,11 +7,12 @@
     <link rel="stylesheet" href="CSS/styles_copy_V2.css">
     <link rel="icon" href="favicon-48x48.png" type="image/png">
     <audio id="buttonSound" src="mouse-click.wav" preload="auto"></audio>
-
+    
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.8.0/firebase-ui-auth.css" />
+<script src="https://www.gstatic.com/firebasejs/ui/4.8.0/firebase-ui-auth.js"></script>
 
 <!--FONT AWESOME-->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">    
@@ -28,8 +29,8 @@
       </header>
         <div class="intro-container1"><h3>Welcome to NILES</h3>
   <p>Please log in to get started</p></div><br>
-  
-  <div><button id="loginButton">Log In</button></div>
+  <div id="firebaseui-auth-container"></div>
+  <!-- <div><button id="loginButton">Log In</button></div> -->
   <footer><img src="NLI LOGO inline RGB.png" alt="Company Logo" id="company-logo"><br>
    
     
@@ -45,9 +46,8 @@
     </div>
     <div class="intro-container"><h3>NILES: Your Trusted Leadership Advisor</h3>
       <p>What support do you want from NILES today?<br>
-        Be as specific in your prompt as possible, more context allows NILES to provide better answers.<br>
-        Please select the button below to enter your question.<br>
-        Please keep in mind that NILES is still learning. Make sure you use common sense and double check your data for big decisions.</p>
+        The more specific you are in your prompt, the better NILES' responses will be.<br>
+        Keep in mind that NILES is still learning, you should always double check your figures for big decisions.</p>
     </div>  
  <div class="button-container">
  

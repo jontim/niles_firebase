@@ -1,9 +1,4 @@
-// Import the functions you need from the SDKs you need
-
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// nileslead's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD_UKLg9cuxXMov7O3oyVsWqmTD5xHL2gk",
   authDomain: "nileslead.firebaseapp.com",
@@ -17,6 +12,64 @@ const firebaseConfig = {
 const app = firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
+var ui = new firebaseui.auth.AuthUI(firebase.auth());
+
+// Define the userName variable
+let userName = null;
+
+// Define the user variable
+let user = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+ui.start('#firebaseui-auth-container', {
+    signInOptions: [
+      firebase.auth.EmailAuthProvider.PROVIDER_ID,
+      firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+      firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+      firebase.auth.TwitterAuthProvider.PROVIDER_ID
+      // Other providers go here
+    ],
+    callbacks: {
+      signInSuccessWithAuthResult: async function(authResult, redirectUrl) {
+        try {
+          // Fetch the whitelist
+          const whitelist = await getWhitelist();
+           // Check if the user's email address ends with "@neuroleadership.com" or if their email is in the whitelist
+           if (!authResult.user.email.endsWith("@neuroleadership.com") && !whitelist.includes(authResult.user.email)) {
+            // If not, sign them out and show an error message
+            firebase.auth().signOut();
+            document.getElementById('loginStatus').textContent = "Access restricted. Please sign in with a neuroleadership.com email address or the email you used to enroll in LEAD.";
+            return;
+        }
+                   
+          console.log('Authentication successful', authResult.user);
+          // User successfully signed in.
+          // call toggleContentVisibility here:
+          userName = authResult.user.displayName.split(' ')[0]; // Extract the first name
+          user = authResult.user;
+          document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
+          toggleContentVisibility(true);
+          document.getElementById('query-input').focus();
+          // Initialize the conversation after the user has been authenticated
+          await initializeConversation();
+          // Don't automatically redirect. We want to handle redirection in nileslead
+          return false;
+        } catch (error) {
+          console.error('Authentication error:', error);
+          document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
+          toggleContentVisibility(false);
+        }
+      }
+    }
+  });
+});
+
+async function getWhitelist() {
+    const response = await fetch('https://your-api-url.com/whitelist');
+    const data = await response.json();
+    return data;
+  }
+
 
 let lastButtonClicked = null;
 // Set Firebase Auth persistence
@@ -25,79 +78,9 @@ firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
     console.error("Error setting persistence:", error);
   });
 
-// Define the authenticateUser function
-async function authenticateUser() {
-    console.log('Starting authentication process');
-    try {
-        const provider = new firebase.auth.GoogleAuthProvider()
-        provider.setCustomParameters({ hd: "neuroleadership.com" });
-        const result = await firebase.auth().signInWithPopup(provider);
-        const user = result.user;
-        userName = user.displayName.split(' ')[0]; // Extract the first name
-        console.log('Authentication successful', user);
-        
-        if (!user.email.endsWith("@neuroleadership.com")) {
-            throw new Error("Access restricted to neuroleadership.com domain.");
-        }
-
-        document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
-        toggleContentVisibility(true);
- 
-        // Initialize the conversation after the user has been authenticated
-        await initializeConversation();
-        document.getElementById('query-input').focus();
-    } catch (error) {
-        console.error('Authentication error:', error);
-        document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
-        toggleContentVisibility(false);
-    }
-}
-
-  
 
 let thread_id = null; 
 
-// async function initializeConversation() {
-//     const user = auth.currentUser;
-//     if (user) { 
-//         console.log('Request to initialize conversation sent', { userUID: user.uid });
-//         const response = await fetch('https://nileslead.uc.r.appspot.com/check_conversation', { // Replace with your Flask app's URL
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
-//             mode: 'cors'
-//         });
-//         console.log('Response received', response);
-
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-
-//         const data = await response.json();
-//         if (data.thread_id) {
-//             // A conversation exists - get the thread_id
-//             thread_id = data.thread_id; 
-//         } else {
-//             // No conversation exists - start a new conversation
-//             const threadResponse = await fetch('https://nileslead.uc.r.appspot.com/create_thread', { // Replace with your Flask app's URL
-//                 method: 'POST',
-//                 headers: { 'Content-Type': 'application/json' },
-//                 body: JSON.stringify({ prompt: 'Hello' }) // Pass an initial prompt to the function
-//             });
-
-//             if (!threadResponse.ok) {
-//                 throw new Error(`HTTP error! status: ${threadResponse.status}`);
-//             }
-
-//             const threadData = await threadResponse.json();
-//             thread_id = threadData.thread_id;
-
-//             // Store the thread_id in Firestore
-//             const conversationRef = db.collection('conversations').doc(user.uid);
-//             await conversationRef.set({ thread_id: thread_id });
-//         }
-//     }
-// }
 
 function toggleContentVisibility(isLoggedIn) {
     document.getElementById('publicContent').style.display = isLoggedIn ? 'none' : 'block';
@@ -105,11 +88,11 @@ function toggleContentVisibility(isLoggedIn) {
 }
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('loginButton').addEventListener('click', authenticateUser);
+// document.addEventListener('DOMContentLoaded', () => {
+    // document.getElementById('loginButton').addEventListener('click', authenticateUser);
     // document.getElementById('questionButton').addEventListener('click', function() {
         // this.classList.add('active');
-    });
+    // });
    
     responseBox = document.getElementById('response-box');
     const circleButtons = document.querySelectorAll('.circle-button');
@@ -211,8 +194,11 @@ async function handleQuerySubmission() {
 
     // Display the user's query in the response box immediately
     const userLabel = userName || 'User';
-    responseBox.innerHTML = `<p style="color:#FF4500;"><strong>${userLabel}:</strong> ${message}</p>` + responseBox.innerHTML;
-
+    const newElement = document.createElement('div');
+    newElement.innerHTML = `<p style="color:#FF4500;"><strong>${userLabel}:</strong> ${message}</p>`;
+    responseBox.appendChild(newElement);
+    newElement.scrollIntoView();
+    queryInput.focus();
     // Wait for a short delay
     await new Promise(resolve => setTimeout(resolve, 2500)); // Adjust the delay as needed
 
@@ -256,14 +242,24 @@ async function submitQuery(message) {
         // Handle the server response
         await handleServerResponse(data);
 
+        // Log the query and response to Firestore
+        const user = firebase.auth().currentUser;
+        if (user) {
+            const logRef = db.collection('logs').doc(user.uid);
+            await logRef.set({
+                query: message,
+                response: data.response[0]
+            }, { merge: true });
+        }
+
     } catch (error) {
         console.error('Error processing server response:', error);
 
         // Display a friendly error message
-        responseBox.innerHTML = `<p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or contact support.</p>`;
+        responseBox.innerHTML = `<p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or if errors persist, contact support ${createEmailLink()} for assistance.</p>`;
     }
 }
-// Revised handleServerResponse to use the new cleaning function
+// handleServerResponse to use the cleaning function
 async function handleServerResponse(data) {
     try {
         let formattedContent = '';
@@ -272,21 +268,41 @@ async function handleServerResponse(data) {
             const extractedValue = data.response[0];
             // Apply text formatting enhancements
             formattedContent = enhanceTextFormatting(extractedValue);
+         
+            // Remove the reference from the response and log it to the console
+            const referenceRegex = /【.*?†source】/g;
+            const match = formattedContent.match(referenceRegex);
+            if (match) {
+                console.log('Reference removed:', match[0]);
+                formattedContent = formattedContent.replace(referenceRegex, '');
+            }
         }
-
+            
         // Create a new div element to hold the processed content
         const newElement = document.createElement('div');
         newElement.innerHTML = `<strong>NILES:</strong> ${formattedContent}`;
 
         // Define responseBox and insert the new element
         const responseBox = document.getElementById('response-box');
-        responseBox.insertBefore(newElement, responseBox.firstChild);
+        responseBox.appendChild(newElement);
+        newElement.scrollIntoView();
     } catch (error) {
         console.error('Error processing server response:', error);
         const responseBox = document.getElementById('response-box');
         responseBox.textContent = 'Error: ' + error.message;
     }
 }
+
+function createEmailLink() {
+    const emailAddress = 'habitactivation@neuroleadership.com';  // Replace with your support email address
+    const subject = encodeURIComponent('NILES support in Docebo');
+    const body = encodeURIComponent('');  // Start with an empty body
+
+    const emailLink = `mailto:${emailAddress}?subject=${subject}&body=${body}`;
+
+    return `<a href="${emailLink}">Contact Support</a>`;
+}
+
 function stripHtmlAndConvert(htmlContent) {
     // Remove HTML tags
     let textContent = htmlContent.replace(/<[^>]*>/g, '');
@@ -303,6 +319,7 @@ function enhanceTextFormatting(textContent) {
         .replace(/\\'/g, "'") // Handle escaped apostrophes
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
         .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+        .replace(/### (.*?)(\n|$)/g, '<h3>$1</h3>') // Heading level 3
         .replace(/## (.*?)(\n|$)/g, '<h2>$1</h2>') // Heading level 2
         .replace(/# (.*?)(\n|$)/g, '<h1>$1</h1>') // Heading level 1
         .replace(/\n/g, '<br>') // Line breaks

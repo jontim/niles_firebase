@@ -8,6 +8,7 @@ from flask_cors import CORS, cross_origin
 import traceback
 import firebase_admin 
 from firebase_admin import firestore, auth, credentials
+from httpx import HTTPStatusError
 
 
 
@@ -98,13 +99,6 @@ def create_thread():
         app.logger.error("Request does not contain a JSON body")
         return jsonify({'error': 'Bad Request - Request must be JSON'}), 400
 
-    # Attempt to get the 'prompt' from the JSON body
-    # data = request.get_json(silent=True)
-    # prompt = data.get('prompt') if data else None
-
-    # if not prompt:
-    #     app.logger.error("No 'prompt' provided in the request")
-    #     return jsonify({'error': 'No prompt provided'}), 400
     try:
         thread = openai.beta.threads.create()
         thread_id = thread.id
@@ -139,13 +133,13 @@ def submit_query():
             role="user",
             content=prompt
         )
-        logging.info(f"Message created with id: {message.id}")
+        logging.info(f"Message created with id: {message.id} and content: {message.content}")
 
         run = openai.beta.threads.runs.create(
             thread_id=thread_id,
             assistant_id=assistant_id           
         )
-        logging.info(f"Run created with id: {run.id}")
+        logging.info(f"Run created with id: {run.id} and status: {run.status}")
         start_time = time.time()
         while True:
             run = openai.beta.threads.runs.retrieve(run.id, thread_id=thread_id)
@@ -177,9 +171,16 @@ def submit_query():
                 return jsonify({'error': 'Timeout waiting for response from AI assistant'}), 500
 
             time.sleep(1)
-
+    except HTTPStatusError as e:
+        if e.response.status_code == 400:
+            logging.error(f"Bad request to OpenAI API: {e}")
+            logging.error(f"Response body: {e.response.text}")
+            return {'error': 'Bad request to OpenAI API.'}, 400
+        else:
+            raise
     except Exception as e: 
         logging.error(f"Error processing prompt: {e}")
+        logging.error(traceback.format_exc())  # Log the full traceback of the exception
         return {'error': 'There was an error communicating with the AI assistant.'}, 500
 
 end_time = time.time()
