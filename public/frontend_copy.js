@@ -154,32 +154,15 @@ function extractValueFromResponse(response) {
 // Function to fetch conversation data when the app initializes or a user logs in
 async function initializeConversation() {
     const user = firebase.auth().currentUser;
-    if (user) { 
+    if (user) {
         const conversationRef = db.collection('conversations').doc(user.uid);
         const conversationSnapshot = await conversationRef.get();
 
-        if (!conversationSnapshot.exists) { 
-            // No conversation exists - start a new conversation
-            const response = await fetch('https://nileslead.uc.r.appspot.com/create_thread', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userUID: user.uid }), // Pass the user's UID to the function
-                mode: 'cors'
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            thread_id = data.thread_id;
-
-            // Store the thread_id in Firestore
-            await conversationRef.set({ thread_id: thread_id });
-        } else {
-            // A conversation exists - get the thread_id
+        if (conversationSnapshot.exists) {
             const conversationData = conversationSnapshot.data();
-            thread_id = conversationData.thread_id; 
+            thread_id = conversationData.thread_id;
+        } else {
+            thread_id = null;
         }
     }
 }
@@ -218,19 +201,27 @@ async function handleQuerySubmission() {
 async function submitQuery(message) {
     console.log('Submitting query:', message);
     responseBox = document.getElementById('response-box');
+    const user = firebase.auth().currentUser;
     const requestData = { 
         prompt: message,
-        thread_id: thread_id 
+        user_uid: user.uid
     }; 
 
+    let endpoint;
+    if (thread_id === null) {
+        endpoint = 'https://nileslead.uc.r.appspot.com/create_thread';
+    } else {
+        requestData.thread_id = thread_id;
+        endpoint = 'https://nileslead.uc.r.appspot.com/submit_query';
+    }
+
     try {
-        const response = await fetch('https://nileslead.uc.r.appspot.com/submit_query', { // Replace with your Flask app's URL
+        const response = await fetch(endpoint, { 
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestData),
             mode: 'cors'
         });
-
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -239,18 +230,21 @@ async function submitQuery(message) {
         const data = await response.json();
         console.log('Server response:', data);
 
+        if (thread_id === null) {
+            thread_id = data.thread_id;
+            const conversationRef = db.collection('conversations').doc(user.uid);
+            await conversationRef.set({ thread_id: thread_id });
+        }
+
         // Handle the server response
         await handleServerResponse(data);
 
         // Log the query and response to Firestore
-        const user = firebase.auth().currentUser;
-        if (user) {
-            const logRef = db.collection('logs').doc(user.uid);
-            await logRef.set({
-                query: message,
-                response: data.response[0]
-            }, { merge: true });
-        }
+        const logRef = db.collection('logs').doc(user.uid);
+        await logRef.set({
+            query: message,
+            response: data.response[0]
+        }, { merge: true });
 
     } catch (error) {
         console.error('Error processing server response:', error);

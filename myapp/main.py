@@ -33,11 +33,13 @@ def home():
 
 @app.before_request
 def start_request():
+    request.start_time = time.time()
     logging.info(f"Starting request to {request.path}")
 
 @app.after_request
 def log_response(response):
-    logging.info(f"Response status: {response.status_code}")
+    execution_time = time.time() - request.start_time
+    logging.info(f"Response status: {response.status_code}, Execution time: {execution_time} seconds")
     return response
     
 
@@ -47,50 +49,6 @@ def handle_unexpected_error(e):
     logging.error(traceback.format_exc())
     return {'error': 'An unexpected error occurred.'}, 500
 
-start_time = time.time()
-@app.route('/check_conversation', methods=['POST', 'OPTIONS'])
-@cross_origin(origin='*', headers=['Content-Type','Authorization'])
-def check_conversation():
-    
-    user_uid = request.json.get('userUID')
-
-    # Get a reference to the Firestore database
-    db = firestore.client()
-
-    # Get a reference to the conversation document
-    conversation_ref = db.collection('conversations').document(user_uid)
-
-    # Get the conversation document
-    conversation_doc = conversation_ref.get()
-
-    if conversation_doc.exists:
-        conversation_data = conversation_doc.to_dict()
-
-        # Check if the thread_id exists in the conversation document
-        if 'thread_id' in conversation_data:
-            # If a conversation exists and it has a thread_id, return the thread_id
-            return jsonify({'thread_id': conversation_data['thread_id']}), 200
-        else:
-            # If a conversation exists but it doesn't have a thread_id, return a message indicating this
-            return jsonify({'message': 'No thread_id in conversation'}), 200
-    else:
-        # If no conversation exists, get the user's details
-        user = auth.get_user(user_uid)
-        user_name = user.display_name.split(' ')[0]
-
-        # Create a new conversation document
-        conversation_ref.set({
-            'messages': [],
-            'userId': user_uid,
-            'name': user_name
-        })
-        return jsonify({'message': 'New conversation created'}), 200
-
-end_time = time.time()
-
-print(f"Execution time: {end_time - start_time} seconds")
-        
-start_time = time.time()
 @app.route('/create_thread', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='*', headers=['Content-Type','Authorization'])
 def create_thread():
@@ -100,41 +58,37 @@ def create_thread():
         return jsonify({'error': 'Bad Request - Request must be JSON'}), 400
 
     try:
-        thread = openai.beta.threads.create()
+        prompt = request.json.get('prompt')
+        thread = openai.beta.threads.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
         thread_id = thread.id
-        session['thread_id'] = thread_id
-        return jsonify({'message': 'Thread created', 'thread_id': thread_id}), 200
+        message_id = thread.messages[0].id
+        return jsonify({'message': 'Thread and message created', 'thread_id': thread_id, 'message_id': message_id}), 200
        
     except Exception as e:
         # Log the exception along with any relevant details
-        app.logger.error(f"Failed to create thread in OpenAI: {e}")
-        return jsonify({'error': 'Failed to create thread'}), 500
-end_time = time.time()
+        app.logger.error(f"Failed to create thread and message in OpenAI: {e}")
+        return jsonify({'error': 'Failed to create thread and message'}), 500
 
-print(f"Execution time: {end_time - start_time} seconds")
-
-start_time = time.time()
 @app.route('/submit_query', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='*', headers=['Content-Type','Authorization'])
 def submit_query():
     logging.info("Received request for /submit_query")  # Log when a request is received
     
-    prompt = request.json.get('prompt')
     thread_id = request.json.get('thread_id')
 
-    logging.info(f"Received prompt: {prompt} and thread_id: {thread_id}")  # Log the received prompt and thread_id
+    logging.info(f"Received thread_id: {thread_id}")  # Log the received thread_id
 
-    if not prompt or not thread_id:
-        return {'error': 'No prompt or thread_id provided'}, 400
+    if not thread_id:
+        return {'error': 'No thread_id provided'}, 400
 
     try:
-        message = openai.beta.threads.messages.create(
-            thread_id=thread_id,
-            role="user",
-            content=prompt
-        )
-        logging.info(f"Message created with id: {message.id} and content: {message.content}")
-
         run = openai.beta.threads.runs.create(
             thread_id=thread_id,
             assistant_id=assistant_id           
@@ -165,7 +119,11 @@ def submit_query():
 
             elif run.status == "failed":
                 logging.error(f"Run failed: {run}")
+                steps = openai.beta.threads.runs.steps.list(run.id, thread_id=thread_id).data
+                for step in steps:
+                    logging.error(f"Step {step.id}: {step}")
                 raise Exception("Run failed")
+                
 
             if time.time() - start_time > 60:  # Timeout after 60 seconds
                 return jsonify({'error': 'Timeout waiting for response from AI assistant'}), 500
@@ -183,8 +141,7 @@ def submit_query():
         logging.error(traceback.format_exc())  # Log the full traceback of the exception
         return {'error': 'There was an error communicating with the AI assistant.'}, 500
 
-end_time = time.time()
-print(f"Execution time: {end_time - start_time} seconds")
+
 # if __name__ == '__main__':
 #      app.run(host='0.0.0.0',port=5001, debug=True)
     
