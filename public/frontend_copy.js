@@ -25,50 +25,38 @@ ui.start('#firebaseui-auth-container', {
     signInOptions: [
       firebase.auth.EmailAuthProvider.PROVIDER_ID,
       firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-      firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-      firebase.auth.TwitterAuthProvider.PROVIDER_ID
+    //   firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+    //   firebase.auth.TwitterAuthProvider.PROVIDER_ID
       // Other providers go here
     ],
     callbacks: {
-      signInSuccessWithAuthResult: async function(authResult, redirectUrl) {
-        try {
-          // Fetch the whitelist
-          const whitelist = await getWhitelist();
-           // Check if the user's email address ends with "@neuroleadership.com" or if their email is in the whitelist
-           if (!authResult.user.email.endsWith("@neuroleadership.com") && !whitelist.includes(authResult.user.email)) {
-            // If not, sign them out and show an error message
-            firebase.auth().signOut();
-            document.getElementById('loginStatus').textContent = "Access restricted. Please sign in with a neuroleadership.com email address or the email you used to enroll in LEAD.";
-            return;
+        signInSuccessWithAuthResult: async function(authResult, redirectUrl) {
+            try {
+                // If the user is authorized, continue with the sign-in process
+                console.log('Authentication successful', authResult.user);
+                // User successfully signed in.
+                // call toggleContentVisibility here:
+                userName = authResult.user.displayName.split(' ')[0]; // Extract the first name
+                user = authResult.user;
+                document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
+                toggleContentVisibility(true);
+                document.getElementById('query-input').focus();
+                // Initialize the conversation after the user has been authenticated
+                await initializeConversation();
+                // Don't automatically redirect. We want to handle redirection in nileslead
+                return;
+            } catch (error) {
+                // If there was an error during the sign-in process, log the error and show an error message
+                console.error('Authentication error:', error);
+                document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
+                toggleContentVisibility(false);
+            }
         }
-                   
-          console.log('Authentication successful', authResult.user);
-          // User successfully signed in.
-          // call toggleContentVisibility here:
-          userName = authResult.user.displayName.split(' ')[0]; // Extract the first name
-          user = authResult.user;
-          document.getElementById('loginStatus').textContent = `Welcome, ${user.displayName}`;
-          toggleContentVisibility(true);
-          document.getElementById('query-input').focus();
-          // Initialize the conversation after the user has been authenticated
-          await initializeConversation();
-          // Don't automatically redirect. We want to handle redirection in nileslead
-          return false;
-        } catch (error) {
-          console.error('Authentication error:', error);
-          document.getElementById('loginStatus').textContent = "Error during login: " + error.message;
-          toggleContentVisibility(false);
-        }
-      }
     }
   });
 });
 
-async function getWhitelist() {
-    const response = await fetch('https://your-api-url.com/whitelist');
-    const data = await response.json();
-    return data;
-  }
+
 
 
 let lastButtonClicked = null;
@@ -175,6 +163,9 @@ async function handleQuerySubmission() {
     // Clear the input field
     queryInput.value = '';
 
+    // Submit the query immediately
+    const queryPromise = submitQuery(message);
+
     // Display the user's query in the response box immediately
     const userLabel = userName || 'User';
     const newElement = document.createElement('div');
@@ -182,6 +173,7 @@ async function handleQuerySubmission() {
     responseBox.appendChild(newElement);
     newElement.scrollIntoView();
     queryInput.focus();
+
     // Wait for a short delay
     await new Promise(resolve => setTimeout(resolve, 2500)); // Adjust the delay as needed
 
@@ -189,10 +181,10 @@ async function handleQuerySubmission() {
     const typingMessage = document.createElement('p');
     typingMessage.id = 'typingMessage';
     typingMessage.innerHTML = '<em>NILES is typing...</em>';
-    responseBox.insertBefore(typingMessage, responseBox.firstChild);
+    responseBox.appendChild(typingMessage);
 
-    // Submit the query
-    await submitQuery(message);
+    // Wait for the query to finish
+    await queryPromise;
 
     // Remove the "NILES is typing..." message
     typingMessage.remove();
@@ -203,7 +195,7 @@ async function submitQuery(message) {
     responseBox = document.getElementById('response-box');
     const user = firebase.auth().currentUser;
     const requestData = { 
-        prompt: message,
+        message: message,
         user_uid: user.uid
     }; 
 
@@ -246,13 +238,25 @@ async function submitQuery(message) {
             response: data.response[0]
         }, { merge: true });
 
+        // Write to Firestore
+        const docRef = db.collection('threads').doc(thread_id);
+        await docRef.update({
+            'messages': firebase.firestore.FieldValue.arrayUnion({
+                'id': data.response[0].id,
+                'role': 'assistant',
+                'content': data.response[0].content,
+                'created_at': new Date()
+            })
+        });
+
     } catch (error) {
         console.error('Error processing server response:', error);
 
         // Display a friendly error message
-        responseBox.innerHTML = `<p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or if errors persist, contact support ${createEmailLink()} for assistance.</p>`;
+        responseBox.innerHTML = `<p><strong>NILES:</strong> I'm sorry, I encountered an error. Please try asking your question again or if errors persist, ${createEmailLink()} for assistance.</p>`;
     }
 }
+
 // handleServerResponse to use the cleaning function
 async function handleServerResponse(data) {
     try {

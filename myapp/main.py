@@ -9,9 +9,10 @@ import traceback
 import firebase_admin 
 from firebase_admin import firestore, auth, credentials
 from httpx import HTTPStatusError
-
-
-
+import json
+import requests
+import os
+from datetime import datetime
 cred = credentials.Certificate('nileslead-firebase-adminsdk-jt2wv-308b7ef8e5.json')
 firebase_admin.initialize_app(cred)
 load_dotenv()
@@ -22,10 +23,21 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for all rout
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 openai.api_key = os.getenv('OPENAI_API_KEY')
 assistant_id = os.getenv('ASSISTANT_ID')
-
+client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # logging.DEBUG('This message will go to the log file')
+
+def show_json(obj):
+    if hasattr(obj, 'to_dict'):
+        obj = obj.to_dict()
+    elif hasattr(obj, 'as_dict'):
+        obj = obj.as_dict()
+    elif hasattr(obj, 'dict'):
+        obj = obj.dict()
+    elif hasattr(obj, '__dict__'):
+        obj = obj.__dict__
+    print(json.dumps(obj, indent=4))
 
 @app.route('/')
 def home():
@@ -48,6 +60,7 @@ def handle_unexpected_error(e):
     logging.error(f"Unexpected error: {str(e)}")
     logging.error(traceback.format_exc())
     return {'error': 'An unexpected error occurred.'}, 500
+
 
 @app.route('/create_thread', methods=['POST', 'OPTIONS'])
 @cross_origin(origin='*', headers=['Content-Type','Authorization'])
@@ -82,21 +95,39 @@ def submit_query():
     logging.info("Received request for /submit_query")  # Log when a request is received
     
     thread_id = request.json.get('thread_id')
+    user_message = request.json.get('message')
+    
 
-    logging.info(f"Received thread_id: {thread_id}")  # Log the received thread_id
+    logging.info(f"Received thread_id: {thread_id}, user_message: {user_message}")  # Log the received thread_id
 
-    if not thread_id:
-        return {'error': 'No thread_id provided'}, 400
+    if not thread_id or not user_message:
+         return {'error': 'No thread_id or message provided'}, 400
+
 
     try:
+        # Add the new user message to the thread
+        openai.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=user_message
+        )
+        
+        logging.info("Creating run...")  # Log before creating a run
         run = openai.beta.threads.runs.create(
             thread_id=thread_id,
-            assistant_id=assistant_id           
+            assistant_id=assistant_id          
         )
+        show_json(run)
         logging.info(f"Run created with id: {run.id} and status: {run.status}")
         start_time = time.time()
+        time.sleep(20)  # Wait for 10 seconds before the first poll
+        poll_count = 0  # Initialize poll counter
         while True:
+            if poll_count >= 10:  # Limit the number of polls to 9
+                  break
+            logging.info("Retrieving run...")  # Log before retrieving a run
             run = openai.beta.threads.runs.retrieve(run.id, thread_id=thread_id)
+            logging.info(f"Retrieved run with status: {run.status}")  # Log the status of the retrieved run
             if run.status == "completed":
                 messages = openai.beta.threads.messages.list(thread_id=thread_id).data
                 assistant_messages = [m for m in messages if m.role == "assistant"]
@@ -119,16 +150,21 @@ def submit_query():
 
             elif run.status == "failed":
                 logging.error(f"Run failed: {run}")
+                logging.info("Listing steps...")  # Log before listing steps
                 steps = openai.beta.threads.runs.steps.list(run.id, thread_id=thread_id).data
                 for step in steps:
                     logging.error(f"Step {step.id}: {step}")
                 raise Exception("Run failed")
-                
+            time.sleep(15)  # Wait for 10 seconds between each poll
+            poll_count += 1  # Increment poll counter   
 
-            if time.time() - start_time > 60:  # Timeout after 60 seconds
+            if time.time() - start_time > 180:  # Timeout after 180 seconds
                 return jsonify({'error': 'Timeout waiting for response from AI assistant'}), 500
 
-            time.sleep(1)
+        # If the function reaches this point, the run did not complete within the expected time
+        return jsonify({'error': 'Run did not complete within the expected time'}), 500    
+
+           
     except HTTPStatusError as e:
         if e.response.status_code == 400:
             logging.error(f"Bad request to OpenAI API: {e}")
@@ -140,8 +176,6 @@ def submit_query():
         logging.error(f"Error processing prompt: {e}")
         logging.error(traceback.format_exc())  # Log the full traceback of the exception
         return {'error': 'There was an error communicating with the AI assistant.'}, 500
-
-
 # if __name__ == '__main__':
 #      app.run(host='0.0.0.0',port=5001, debug=True)
     
